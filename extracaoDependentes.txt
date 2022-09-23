@@ -1,0 +1,48 @@
+dependentesParticipantes<-function(basedados, dependentes) {
+  # Inclui o dependente correspondente do ativo e aposentado
+  pisUnico<-as.data.frame(table(dependentes$cpf))
+  names(pisUnico)<-c("cpf","numDep")
+  b<- 3*(max(pisUnico$numDep)) +3 #numero de colunas
+  a<-dim(basedados)[1] #numero de linhas
+  j<-matrix(,nrow = a,ncol = b) #armazena nascimento, condição e tipo de dependente
+  o<-matrix(,nrow = a,ncol = 1) #numero de dependentes do participante encontrados
+  l<-0
+  for ( i in 1:a){
+   
+    o[i]<-0
+    if (length(pisUnico$numDep[pisUnico$cpf==basedados$cpf[i]]) > 0){
+      o[i]<-pisUnico$numDep[pisUnico$cpf==basedados$cpf[i]]
+     
+      for (k in 1:(o[i])){
+        l <- k*3 +1
+        if(dependentes$tipoDependencia[dependentes$cpf==basedados$cpf[i]][k] == 1){
+         
+          j[i,1]<-t((as.character(dependentes$nascDep[basedados$cpf[i]==dependentes$cpf])))[k]
+          j[i,2]<-t(as.integer(dependentes$condicaoDep[basedados$cpf[i]==dependentes$cpf]))[k]
+          j[i,3]<-t((as.integer(dependentes$tipoDependencia[basedados$cpf[i]==dependentes$cpf])))[k]
+        }else
+          # l <- k*3 +1
+          j[i,l] <-t((as.character(dependentes$nascDep[basedados$cpf[i]==dependentes$cpf])))[k]
+          j[i,l+1] <-t(as.integer(dependentes$condicaoDep[basedados$cpf[i]==dependentes$cpf]))[k]
+          j[i,l+2] <-t((as.integer(dependentes$tipoDependencia[basedados$cpf[i]==dependentes$cpf])))[k]
+      }
+    }
+  }
+  maxDep<-as.integer(dim(j)[2])/3
+  nomesColunas<-c("numDep",paste(rep(c("nascDep","condicaoDep","tipoDep"),maxDep),rep(1:maxDep,each=3),sep = ""))
+  dependentesFinal<-as.data.frame(cbind(o,j))
+  names(dependentesFinal)<-nomesColunas
+  dependentesFinal<-cbind(basedados,dependentesFinal)
+  return(dependentesFinal)
+}
+
+
+row.has.na <- apply(aposentadosCampanha, 1, function(x){any(!is.na(x))})
+aposentadosCampanha2<-aposentadosCampanha[!row.has.na,]
+aposentadosCampanha2<- aposentadosCampanha[rowSums(is.na(aposentadosCampanha))!=ncol(aposentadosCampanha), ]
+
+dependentesCampanha$cpf<-stringr::str_squish(dependentesCampanha$cpf)
+ativosCampanha$cpf<-stringr::str_squish(ativosCampanha$cpf)
+aposentadosCampanha$cpf<-stringr::str_squish(aposentadosCampanha$cpf)
+dependentesCampanha<-dependentesCampanha[order(dependentesCampanha$cpf, dependentesCampanha$tipoDependencia,
+                                               dependentesCampanha$nascDep, decreasing=c(F, F,F)),]
